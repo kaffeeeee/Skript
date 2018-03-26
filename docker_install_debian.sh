@@ -58,37 +58,64 @@ apt-get install portmap
 #Die Datei auslagern und einfach kopieren
 #touch /etc/exports
 # desktop darf lesen und schreiben (rw)
+#
 #/PFAD/ZUR/FREIGABE1      notebook(ro,async) desktop(rw,async)
+#
 # Freigabe gilt für alle IPs von 192.168.1.1 bis 192.168.1.255, mit Lese-/Schreibrechten:
 #/PFAD/ZUR/FREIGABE3       192.168.178.0/255.255.255.0(rw,async)
 #/var/nfsroot     example_IP/17(rw,root_squash,subtree_check)
 ##
-/APPL/DATA/shared/ 192.168.178.0/255.255.255.0(rw,root_squash,subtree_check)
-/APPL/DATA/appdata 192.168.178.0/255.255.255.0(rw,root_squash,subtree_check)
-/APPL/DATA/logs 192.168.178.0/255.255.255.0(rw,root_squash,subtree_check)
+echo "/APPL/DATA/shared/ 192.168.178.0/255.255.255.0(rw,root_squash,subtree_check)" >> /etc/exports
+#abfrage j / n oder if hostname?
+echo "/APPL/DATA/appdata 192.168.178.0/255.255.255.0(rw,root_squash,subtree_check)" >> /etc/exports
+#abfrage j / n
+echo "/APPL/DATA/logs 192.168.178.0/255.255.255.0(rw,root_squash,subtree_check)" >> /etc/exports
 
 #Freigaben Einbinden
 #/etc/fstab
 #192.168.6.13:/home /media/server nfs rw 0 0
 #example_IP:/var/nfsroot /mnt/remotenfs nfs rw,async,hard,intr,noexec 0 0
-master:/APPL/DATA/shared /APPL/DATA/shared nfs rw,async,hard,intr 0 0
-slave1:/APPL/DATA/appdata /APPL/DATA/appdata nfs rw,async,hard,intr 0 0
-slave2:/APPL/DATA/logs /APPL/DATA/logs nfs rw,async,hard,intr 0 0
+echo "master:/APPL/DATA/shared /APPL/DATA/shared nfs rw,async,hard,intr 0 0" >> /etc/fstab
+echo "slave1:/APPL/DATA/appdata /APPL/DATA/appdata nfs rw,async,hard,intr 0 0" >> /etc/fstab
+echo "slave2:/APPL/DATA/logs /APPL/DATA/logs nfs rw,async,hard,intr 0 0" >> /etc/fstab
 
 #Symblinks erstellen
+rm -rf /var/lib/docker/overlay2
 ln -s /APPL/DATA/shared/images /var/lib/docker/overlay2
 ln -s /APPL/DATA/logs /logs
 
-#Aliase Git+Docker?
-
 #Kubernate installieren
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" >> /etc/apt/sources.list.d/kubernetes.list
+apt-get updateapt-get upgrade
+apt-get install -y kubelet kubeadm kubectl kubernetes-cni
+
+#Cluster aufsetzen
+#kubeadm init --pod-network-cidr 10.244.0.0/16 --api-advertise-addresse 10.0.0.1
+##Der letzte Befehl erzeugt einen Befehl zum hinzufügen von Nodes
+##Cluster anzeigen lassen
+#kubecl get nodes
+
+#IPtabels um Wlan nach ETH0 und zurueck zu Routen
+#iptables -t nat -A POSTROUTING -o wlan0 -j MASQUERADE
+#iptables -A FORWARD -i wlan0 -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+#iptables -A FORWARD -i eth0 -o wlan0 -j ACCEPT
+
+#Flannel Netzwerk Cluster Setup
+#curl https://rawgit.com/coreos/flannel/master/Documentation/kube-flannel.yml | sed"s/amd64/arm/g" | sed "s/vxlan/host-gw/g" > kube-flannel.yaml
+#kubectl apply -f kube-flannel.yaml
+
+#Kubenate GUI installieren
+#DASHSRC=https://raw.githubusercontent.com/kubernetes/dashboard/master
+#curl -sSl $DASHSRC/src/deploy/kubernetes-dashboard.yaml | sed "s/amd64/arm/g" | kubectl apply -f -
 
 #W-Lan Konfigurieren
 
+#Aliase Git+Docker?
 
 #ganz ans Ende?
 #Log out and log back in. You should now be able to run Docker commands without prefixing .
-docker run hello-world
+#docker run hello-world
 
 
 
