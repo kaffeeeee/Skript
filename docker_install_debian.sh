@@ -17,6 +17,9 @@ echo "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -c
 
 #Update the apt database.
  apt-get update
+ 
+#Curl installieren
+apt install curl
 
 #Make sure you are installing Docker from the official repository, not from the default Debian repository.
  apt-cache policy docker-ce
@@ -35,6 +38,7 @@ echo "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -c
 
 #Add a user to docker group.
  usermod -aG docker chris
+ usermod -aG root chris
 
 #scheiss ifconfig installieren
 apt-get install net-tools
@@ -50,6 +54,11 @@ mkdir /APPL/DATA/master_logs
 mkdir /APPL/DATA/shared/skripte
 mkdir /APPL/DATA/shared/cluster_ID
 mkdir /APPL/DATA/shared/images
+
+#Hosts
+echo "192.168.178.230 pimaster" >> /etc/hosts
+echo "192.168.178.231 pislave1" >> /etc/hosts
+echo "192.168.178.232 pislave2" >> /etc/hosts
 
 #Platten Freigeben
  apt-get install nfs-common 
@@ -75,20 +84,20 @@ echo "/APPL/DATA/logs 192.168.178.0/255.255.255.0(rw,root_squash,subtree_check)"
 #/etc/fstab
 #192.168.6.13:/home /media/server nfs rw 0 0
 #example_IP:/var/nfsroot /mnt/remotenfs nfs rw,async,hard,intr,noexec 0 0
-echo "master:/APPL/DATA/shared /APPL/DATA/shared nfs rw,async,hard,intr 0 0" >> /etc/fstab
-echo "slave1:/APPL/DATA/appdata /APPL/DATA/appdata nfs rw,async,hard,intr 0 0" >> /etc/fstab
-echo "slave2:/APPL/DATA/logs /APPL/DATA/logs nfs rw,async,hard,intr 0 0" >> /etc/fstab
+echo "pimaster:/APPL/DATA/shared /APPL/DATA/shared nfs rw,async,hard,intr 0 0" >> /etc/fstab
+echo "pislave1:/APPL/DATA/appdata /APPL/DATA/appdata nfs rw,async,hard,intr 0 0" >> /etc/fstab
+echo "pislave2:/APPL/DATA/logs /APPL/DATA/logs nfs rw,async,hard,intr 0 0" >> /etc/fstab
 
 #Symblinks erstellen
-rm -rf /var/lib/docker/overlay2
-ln -s /APPL/DATA/shared/images /var/lib/docker/overlay2
+#rm -rf /var/lib/docker/overlay2
+#ln -s /APPL/DATA/shared/images /var/lib/docker/overlay2
 ln -s /APPL/DATA/logs /logs
 
 #Kubernate installieren
-curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
-echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" >> /etc/apt/sources.list.d/kubernetes.list
-apt-get updateapt-get upgrade
-apt-get install -y kubelet kubeadm kubectl kubernetes-cni
+#curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+#echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" >> /etc/apt/sources.list.d/kubernetes.list
+#apt-get update | apt-get upgrade
+#apt-get install -y kubelet kubeadm kubectl kubernetes-cni
 
 #Cluster aufsetzen
 #kubeadm init --pod-network-cidr 10.244.0.0/16 --api-advertise-addresse 10.0.0.1
@@ -113,9 +122,22 @@ apt-get install -y kubelet kubeadm kubectl kubernetes-cni
 
 #Aliase Git+Docker?
 
+#/etc/hosts konfigurieren?
+
+#Konfig ebenfalls auf NAS sichern
+
+#installation per ansibile
+#git clone https://github.com/Project31/ansible-kubernetes-openshift-pi3.git k8s-pi
+#cd k8s-pi
+
 #ganz ans Ende?
 #Log out and log back in. You should now be able to run Docker commands without prefixing .
 #docker run hello-world
+
+echo "#Platten Freigeben"
+echo "/etc/exports"
+echo "#Freigaben Einbinden"
+echo "/etc/fstab"
 
 
 
